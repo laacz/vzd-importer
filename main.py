@@ -9,16 +9,22 @@ import re
 import zipfile
 from os import environ
 from os.path import exists
-import psycopg2
 
+import fiona
+from shapely import wkt
+import psycopg2
 import httpx
+from shapely.geometry import shape
 
 SCRIPT_PATH = os.path.dirname(os.path.abspath(inspect.getframeinfo(inspect.currentframe()).filename))
 DATA_PATH = f'{SCRIPT_PATH}/data'
 
-uri = 'https://data.gov.lv/dati/dataset/0c5e1a3b-0097-45a9-afa9-7f7262f3f623/resource/1d3cbdf2-ee7d-4743-90c7-97d38824d0bf/download/aw_csv.zip'
+uris = [
+    'https://data.gov.lv/dati/dataset/0c5e1a3b-0097-45a9-afa9-7f7262f3f623/resource/1d3cbdf2-ee7d-4743-90c7-97d38824d0bf/download/aw_csv.zip',
+    'https://data.gov.lv/dati/dataset/0c5e1a3b-0097-45a9-afa9-7f7262f3f623/resource/f539e8df-d4e4-4fc1-9f94-d25b662a4c38/download/aw_shp.zip',
+]
 
-vzd_iterator = argparse.ArgumentParser(
+arguments = argparse.ArgumentParser(
     description="""
 Downloads and imports Valsts Zemes Dienests address database into postgis enabled postgresql database. 
 
@@ -28,14 +34,18 @@ Usage example:
 VZD_DBNAME=vzd ./import.py --verbose
 
 """, formatter_class=argparse.RawTextHelpFormatter)
-vzd_iterator.add_argument('--force-import', action='store_true', help='Force import of data even if it has not been changed')
-vzd_iterator.add_argument('--verbose', action='store_true', help='Loglevel = DEBUG')
-vzd_iterator.add_argument('--quiet', action='store_true', help='Loglevel = ERROR')
-vzd_iterator.add_argument('--skip-extract', action='store_true', help='Do not extract data (useful for quicker debugging)')
-vzd_iterator.add_argument('--only', help='Ar komatu atdalīti failu nosaukumi, kurus apstrādāt')
+arguments.add_argument('--force-import', action='store_true',
+                       help='Force import of data even if it has not been changed')
+arguments.add_argument('--verbose', action='store_true', help='Loglevel = DEBUG')
+arguments.add_argument('--quiet', action='store_true', help='Loglevel = ERROR')
+arguments.add_argument('--skip-extract', action='store_true',
+                       help='Do not extract data (useful for quicker debugging)')
+arguments.add_argument('--only', help='Ar komatu atdalīti failu nosaukumi, kurus apstrādāt')
+arguments.add_argument('uris', nargs='*', help='URIs to process (for example, "aw_csv.zip aw_shp.zip")')
 
-args = vzd_iterator.parse_args()
+args = arguments.parse_args()
 
+URIS = args.uris
 FORCE_IMPORT = args.force_import
 SKIP_EXTRACT = args.skip_extract
 FILES = ()
@@ -244,7 +254,25 @@ def vzd_iterator(conf, reader):
         yield r
 
 
-def process_file(file_name):
+def process_shp(file_name):
+    if len(FILES) and file_name not in FILES:
+        logger.debug(f'Skipping {file_name}')
+        return
+
+    logger.info(f'Processing {file_name}')
+
+    with fiona.open(f'{DATA_PATH}/{file_name}', 'r') as shp:
+        i = 0
+        for geom in shp:
+            i += 1
+            s = shape(geom['geometry'])
+            if i % 10000 == 0:
+                logger.debug(f'Processed {i}')
+            # exit()
+    print(f'Rows processed: {i}')
+
+
+def process_csv(file_name):
     if file_name not in FILES_MAP:
         logger.debug(f'Skipping {file_name} (unsupported file)')
         return
@@ -267,7 +295,7 @@ def process_file(file_name):
 
             logger.debug("Reading CSV file")
             with open(f'{DATA_PATH}/{file_name}', 'r+') as file:
-                reader = vzd_iterator(conf, csv.reader(file, delimiter=";", quotechar='#'))
+                reader = arguments(conf, csv.reader(file, delimiter=";", quotechar='#'))
                 # Skip header
                 next(reader)
                 columns = list(conf['columns'].keys())
@@ -317,12 +345,23 @@ def process(file_name):
             logger.debug(f'Extracting files to {DATA_PATH}')
             zip.extractall(DATA_PATH)
 
-    for file in os.listdir(os.fsencode(DATA_PATH)):
-        file_name = os.fsdecode(file)
-        if file_name.lower().endswith('.csv'):
-            process_file(file_name)
+    if file_name.startswith('aw_csv'):
+        for file in os.listdir(os.fsencode(DATA_PATH)):
+            file_name = os.fsdecode(file)
+            if file_name.lower().endswith('.csv'):
+                process_csv(file_name)
+
+    elif file_name.startswith('aw_shp'):
+        for file in os.listdir(os.fsencode(DATA_PATH)):
+            file_name = os.fsdecode(file)
+            if file_name.lower().endswith('.shp'):
+                process_shp(file_name)
 
 
 if __name__ == '__main__':
-    if downloaded(uri) or FORCE_IMPORT:
-        process(os.path.basename(uri))
+    for uri in uris:
+        if not len(URIS) or (len(URIS) and any(u in uri for u in URIS)):
+            if downloaded(uri) or FORCE_IMPORT:
+                process(os.path.basename(uri))
+        else:
+            logger.debug(f'Skipping {uri}')
