@@ -18,7 +18,7 @@ DATA_PATH = f'{SCRIPT_PATH}/data'
 
 uri = 'https://data.gov.lv/dati/dataset/0c5e1a3b-0097-45a9-afa9-7f7262f3f623/resource/1d3cbdf2-ee7d-4743-90c7-97d38824d0bf/download/aw_csv.zip'
 
-vzd_iterator = argparse.ArgumentParser(
+args_parser = argparse.ArgumentParser(
     description="""
 Downloads and imports Valsts Zemes Dienests address database into postgis enabled postgresql database. 
 
@@ -28,13 +28,13 @@ Usage example:
 VZD_DBNAME=vzd ./import.py --verbose
 
 """, formatter_class=argparse.RawTextHelpFormatter)
-vzd_iterator.add_argument('--force-import', action='store_true', help='Force import of data even if it has not been changed')
-vzd_iterator.add_argument('--verbose', action='store_true', help='Loglevel = DEBUG')
-vzd_iterator.add_argument('--quiet', action='store_true', help='Loglevel = ERROR')
-vzd_iterator.add_argument('--skip-extract', action='store_true', help='Do not extract data (useful for quicker debugging)')
-vzd_iterator.add_argument('--only', help='Ar komatu atdalīti failu nosaukumi, kurus apstrādāt')
+args_parser.add_argument('--force-import', action='store_true', help='Force import of data even if it has not been changed')
+args_parser.add_argument('--verbose', action='store_true', help='Loglevel = DEBUG')
+args_parser.add_argument('--quiet', action='store_true', help='Loglevel = ERROR')
+args_parser.add_argument('--skip-extract', action='store_true', help='Do not extract data (useful for quicker debugging)')
+args_parser.add_argument('--only', help='Ar komatu atdalīti failu nosaukumi, kurus apstrādāt')
 
-args = vzd_iterator.parse_args()
+args = args_parser.parse_args()
 
 FORCE_IMPORT = args.force_import
 SKIP_EXTRACT = args.skip_extract
