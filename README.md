@@ -1,3 +1,20 @@
+Repository contains scripts for fetching and importing State Land Service of the Republic of Latvia open data (addresses and parcels).
+
+- [General info](#general-info)
+  * [Requirements](#requirements)
+  * [Possible future work](#possible-future-work)
+  * [Contributions](#contributions)
+  * [Usage](#usage)
+- [Behaviour](#behaviour)
+  * [Addresses import](#addresses-import)
+  * [Denormalized addresses](#denormalized-addresses)
+  * [Parcels import](#parcels-import)
+- [Legal](#legal)
+  * [Data](#data)
+  * [License](#license)
+
+# General info
+
 Python script `main.py` downloads and imports Latvian addresses into PostgreSQL database. Data contains parishes,
 counties, cities, towns, and streets.
 
@@ -12,19 +29,19 @@ parcel errors, parcel parts, surveying statuses, and way restrictions)..
 * shp2pgsql (shipped with PostGIS), curl, and [jq command-line JSON processor](https://stedolan.github.io/jq/) for
   parcel import script.
 
-# Possible future work
+## Possible future work
 
 - [ ] Add import of addresses related shapefiles (same dataset, different archive file; contributors welcome, I have no
-  use case for it just now)
+  use case for it just now). You can contribute via a PR.
 - [x] Add a utility script to download and import
   of [parcels data](https://data.gov.lv/dati/lv/dataset/kadastra-informacijas-sistemas-atverti-telpiskie-dati) (there's
   a lot of shapefiles)
 
-# Contributions
+## Contributions
 
 These are welcome (use issues to report or discuss, pull requests to implement).
 
-# Usage
+## Usage
 
 To fetch and import addresses, create schema (`psql schema <schema.sql`) and then
 run `VZD_DBNAME=schema python3 main.py --verbose`.
@@ -47,6 +64,8 @@ If data has invalid coordinates (latitude or longitude is not a number), it's sk
 
 For `aw_eka` table column `geom` is created, and an spatial index is added. SRID 4326 is used, so some offsets may
 arise.
+
+## Denormalized addresses
 
 If you would like to have a denormalized view of the data, here is a SQL select for that. Resulting dataset contains only existing houses and schema is as follows.
 
@@ -177,13 +196,14 @@ where e.status = 'EKS'
 ;
 ```
 
-
 ## Parcels import
 
 Shell script does nothing fancy. It just fetches JSON metadata, extracts list of all shapefile zip's, downloads them,
 then imports into database (via dropping, creating and populating tables). Spatial index on `geom` is also created.
 
-# Data
+# Legal
+
+## Data
 
 Data has been released by the State Land Service of the Republic of Latvia under goverment's OpenData initiative, and is
 available
@@ -193,7 +213,7 @@ at [this data.gov.lv page](https://data.gov.lv/dati/lv/dataset/valsts-adresu-reg
 [Spec for address data](https://www.vzd.gov.lv/lv/VAR-atversana)
 , [spec for parcel data](https://www.vzd.gov.lv/lv/kadastra-telpisko-datu-atversana).
 
-# License
+## License
 
 CC BY 4.0, which means that it can be used for free, however attribution is required, and no additional restrictions on
 this data can be imposed. This script follows suit.
