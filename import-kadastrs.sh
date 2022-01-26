@@ -9,22 +9,33 @@
 
 # Download
 
-FILES=$(curl https://data.gov.lv/dati/lv/dataset/b28f0eed-73b0-4e44-94e7-b04b11bf0b69.jsonld | jq -r '."@graph"[]."dcat:accessURL"."@id" | select(. != null)')
+echo "Getting file list"
+FILES=$(curl -s https://data.gov.lv/dati/lv/dataset/b28f0eed-73b0-4e44-94e7-b04b11bf0b69.jsonld | jq -r '."@graph"[]."dcat:accessURL"."@id" | select(. != null)')
+
+rm -rf data/kadastrs && mkdir -p data/kadastrs
+
+FILES_ARR=( $FILES )
+TOTAL_FILES=${#FILES_ARR[@]}
+CURRENT_FILE=0
 
 for FILE in $FILES
 do
-  curl "$FILE" -o data/kadastrs/${FILE##*/}
+    CURRENT_FILE=$((CURRENT_FILE+1))
+    echo -n "Downloading $CURRENT_FILE of $TOTAL_FILES file(s) - ${FILE##*/} ... "
+    curl "$FILE" -s -o data/kadastrs/${FILE##*/}
+    echo -n " unzipping ... "
+    unzip -qq -o data/kadastrs/${FILE##*/} -d data/kadastrs/
+    echo "ok"
 done
 
 # Import
-
 APPEND=0
 LAYERS="KKCadastralGroup KKBuilding KKEngineeringStructurePoly KKParcel KKParcelBorderPoint KKParcelError KKParcelPart KKSurveyingStatus KKWayRestriction"
 DB=vzd
 
 for type in $LAYERS; do
     APPEND=0
-    rm "kadastrs/$LAYERS*";
+    rm -f "kadastrs/$type*";
     target_file="kadastrs/$type.shp"
     target_layer=$(echo "$type" | tr '[:upper:]' '[:lower:]')
 
