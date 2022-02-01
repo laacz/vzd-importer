@@ -322,6 +322,16 @@ def process(file_name):
         if file_name.lower().endswith('.csv'):
             process_file(file_name)
 
+    try:
+        with conn:
+            with conn.cursor() as cur:
+                cur.execute('SELECT 1 FROM aw_full_addresses LIMIT 1')
+                logger.info('Refreshing materialized view aw_full_addresses')
+                cur.execute('REFRESH MATERIALIZED VIEW aw_full_addresses')
+                logger.debug('Refreshed materialized view aw_full_addresses')
+    except Exception as e:
+        logger.debug('No materialized view to refresh')
+
 
 if __name__ == '__main__':
     if downloaded(uri) or FORCE_IMPORT:
