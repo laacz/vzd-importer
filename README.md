@@ -106,7 +106,9 @@ SQL itself:
 
 ```sql
 -- Create table from this select or truncate and re-insert data. Up to you. 
-select e.code,
+-- Creates a materialized view, if you uncomment next line. Do not forget to 
+-- create materialized view aw_full_addresses
+as select e.code,
        e.name,
        iela.name as iela_name,
        coalesce(
@@ -128,14 +130,12 @@ select e.code,
        coalesce(
                pagasts.code,
                pagasts_no_ciema.code,
-               pagasts_no_ciema_no_ielas.code,
-               pagasts_no_pilsetas.code
+               pagasts_no_ciema_no_ielas.code
            )     as pagasts_code,
        coalesce(
                pagasts.name,
                pagasts_no_ciema.name,
-               pagasts_no_ciema_no_ielas.name,
-               pagasts_no_pilsetas.name
+               pagasts_no_ciema_no_ielas.name
            )     as pagasts_name,
        coalesce(
                novads_no_pagasta.code,
@@ -155,45 +155,47 @@ select e.code,
        e.parent_code,
        e.parent_type,
        geom
-from vzd_aw_eka e
-         left join vzd_aw_iela iela on iela.code = e.parent_code
+from aw_eka e
+         left join aw_iela iela on iela.code = e.parent_code
 
     -- House is directly in a village
-         left join vzd_aw_ciems ciems on ciems.code = e.parent_code
+         left join aw_ciems ciems on ciems.code = e.parent_code
     -- House is on a street in a village
-         left join vzd_aw_ciems ciems_no_ielas on ciems_no_ielas.code = iela.parent_code
+         left join aw_ciems ciems_no_ielas on ciems_no_ielas.code = iela.parent_code
 
     -- House is directly in a city
-         left join vzd_aw_pilseta pilseta on pilseta.code = e.parent_code
+         left join aw_pilseta pilseta on pilseta.code = e.parent_code
     -- House is on a street in a city
-         left join vzd_aw_pilseta pilseta_no_ielas on pilseta_no_ielas.code = iela.parent_code
+         left join aw_pilseta pilseta_no_ielas on pilseta_no_ielas.code = iela.parent_code
 
     -- House is directly in a parish
-         left join vzd_aw_pagasts pagasts on pagasts.code = e.parent_code
+         left join aw_pagasts pagasts on pagasts.code = e.parent_code
     -- House is directly in a village in a parish
-         left join vzd_aw_pagasts pagasts_no_ciema on pagasts_no_ciema.code = ciems.parent_code
+         left join aw_pagasts pagasts_no_ciema on pagasts_no_ciema.code = ciems.parent_code
     -- House is on a street in a village in a parish
-         left join vzd_aw_pagasts pagasts_no_ciema_no_ielas
+         left join aw_pagasts pagasts_no_ciema_no_ielas
                    on pagasts_no_ciema_no_ielas.code = ciems_no_ielas.parent_code
     -- [!] We do not have a town inside a parish. Parishes are for villages.
 
     -- House in in a parish in a county
-         left join vzd_aw_novads novads_no_pagasta on novads_no_pagasta.code = pagasts.parent_code
+         left join aw_novads novads_no_pagasta on novads_no_pagasta.code = pagasts.parent_code
     -- House is in a village in a parish in a county
-         left join vzd_aw_novads novads_no_pagasta_no_ciema
+         left join aw_novads novads_no_pagasta_no_ciema
                    on novads_no_pagasta_no_ciema.code = pagasts_no_ciema.parent_code
     -- House is on a street in a village in a parish in a county
-         left join vzd_aw_novads novads_no_pagasta_no_ciema_no_ielas
+         left join aw_novads novads_no_pagasta_no_ciema_no_ielas
                    on novads_no_pagasta_no_ciema_no_ielas.code = pagasts_no_ciema_no_ielas.parent_code
     -- House is directly in a town in a county
-         left join vzd_aw_novads novads_no_pilsetas on novads_no_pilsetas.code = pilseta.parent_code
+         left join aw_novads novads_no_pilsetas on novads_no_pilsetas.code = pilseta.parent_code
     -- House is on a street in a town in a county
-         left join vzd_aw_novads novads_no_pilsetas_no_ielas
+         left join aw_novads novads_no_pilsetas_no_ielas
                    on novads_no_pilsetas_no_ielas.code = pilseta_no_ielas.parent_code
      -- [!] We do not have any house which is directly in a county without an intermediate parish
      -- [!] We do not have a village which would be directly inside a county without a parish inbetween.
 where e.status = 'EKS'
 ;
+-- You can create geom column for faster spatial querying:
+-- create index full_ads_geom_idx on aw_full_addresses using gist(geom);
 ```
 
 ## Parcels import
