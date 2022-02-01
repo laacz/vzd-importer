@@ -35,11 +35,11 @@ DB=vzd
 
 for type in $LAYERS; do
     APPEND=0
-    rm -f "kadastrs/$type*";
-    target_file="kadastrs/$type.shp"
+    rm -f "data/kadastrs/$type*";
+    target_file="data/kadastrs/$type.shp"
     target_layer=$(echo "$type" | tr '[:upper:]' '[:lower:]')
 
-    for file in kadastrs/**/"$type".shp; do
+    for file in data/kadastrs/**/"$type".shp; do
         if [ "$APPEND" == 0 ]; then
             echo -n "Create $target_file "
             ogr2ogr -f 'ESRI Shapefile' "$target_file" "$file" -lco ENCODING=UTF-8
