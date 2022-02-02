@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
 
-import csv
 import inspect
 import logging
 import os.path
 import argparse
-import re
 import zipfile
 from os import environ
 import psycopg2
@@ -16,8 +14,14 @@ from defs import get_file_importer
 
 SCRIPT_PATH = os.path.dirname(os.path.abspath(inspect.getframeinfo(inspect.currentframe()).filename))
 DATA_PATH = f'{SCRIPT_PATH}/data'
+BASE_URI = 'https://data.gov.lv/dati/dataset/'
 
-uri = 'https://data.gov.lv/dati/dataset/0c5e1a3b-0097-45a9-afa9-7f7262f3f623/resource/1d3cbdf2-ee7d-4743-90c7-97d38824d0bf/download/aw_csv.zip'
+uris = {
+    # Addresses
+    'addresses': [
+        '0c5e1a3b-0097-45a9-afa9-7f7262f3f623/resource/1d3cbdf2-ee7d-4743-90c7-97d38824d0bf/download/aw_csv.zip',
+    ],
+}
 
 args_parser = argparse.ArgumentParser(
     description="""
@@ -115,5 +119,9 @@ def process_archive(file_name):
 
 
 if __name__ == '__main__':
-    if downloaded(uri) or FORCE_IMPORT:
-        process_archive(os.path.basename(uri))
+    for group, uris in uris.items():
+        for uri in uris:
+            uri = BASE_URI + uri
+            print(group, uri)
+            if downloaded(uri) or FORCE_IMPORT:
+                process_archive(os.path.basename(uri))
