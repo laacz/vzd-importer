@@ -206,3 +206,64 @@ FROM aw_eka e
 WHERE e.status = 'EKS';
 
 CREATE INDEX aw_full_ads_geom_idx ON public.aw_full_addresses USING gist (geom);
+
+
+DROP TABLE IF EXISTS public.marks;
+CREATE TABLE public.marks (
+    cadastre_nr character varying(17) PRIMARY KEY,
+    object_type character varying(14) NOT NULL,
+    mark_type integer NOT NULL,
+    date date DEFAULT NULL,
+    updated boolean DEFAULT false NOT NULL
+);
+
+DROP TABLE IF EXISTS public.valuations;
+CREATE TABLE public.valuations (
+    cadastre_nr character varying(17) PRIMARY KEY,
+    object_type character varying(14) NOT NULL,
+    property_valuation integer default null,
+    property_valuation_date date default null,
+    property_cadastral_value integer default null,
+    property_cadastral_value_date date default null,
+    object_cadastral_value integer default null,
+    object_cadastral_value_date date default null,
+    object_forest_value integer default null,
+    object_forest_value_date date default null,
+    updated boolean DEFAULT false NOT NULL
+);
+
+DROP TABLE IF EXISTS public.addresses;
+CREATE TABLE public.addresses (
+    cadastre_nr character varying(17) PRIMARY KEY,
+    object_type character varying(14) NOT NULL,
+    ar_code integer DEFAULT NULL,
+    post_index character varying(6) DEFAULT NULL,
+    county character varying(128) DEFAULT NULL,
+    parish character varying(128) DEFAULT NULL,
+    town character varying(128) DEFAULT NULL,
+    village character varying(128) DEFAULT NULL,
+    house character varying(128) DEFAULT NULL,
+    updated boolean default false not null
+);
+
+DROP TABLE IF EXISTS public.ownership_statuses;
+CREATE TABLE public.ownership_statuses (
+    id serial PRIMARY KEY,
+    description character varying(128) not null
+);
+
+DROP TABLE IF EXISTS public.ownership_person_statuses;
+CREATE TABLE public.ownership_person_statuses (
+    id serial PRIMARY KEY,
+    description character varying(128) not null
+);
+
+DROP TABLE IF EXISTS public.ownerships;
+CREATE TABLE public.ownerships (
+    cadastre_nr character varying(17) PRIMARY KEY,
+    object_type character varying(14) NOT NULL,
+    ownership_status_id int not null,
+    person_status_id int not null,
+    updated boolean default false not null
+);
+
