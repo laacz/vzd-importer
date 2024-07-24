@@ -1,7 +1,7 @@
 Repository contains scripts for fetching and importing State Land Service of the Republic of Latvia open data (addresses
 and parcels).
 
-> [!NOTE]
+> [!TIP]
 > Repository has not been updated recently. If it works, it works. If not, you might also take a look at [CSB Latvia data import tooling](https://github.com/CSBLatvia/postgresql-open-data-lv).
 
 - [General info](#general-info)
